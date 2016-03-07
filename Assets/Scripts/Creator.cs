@@ -3,7 +3,8 @@ using System.Collections.Generic;
 
 public class Creator : MonoBehaviour {
 
-	public int size = 500; //World size
+	private Vector3 size;
+	private List<GameObject> objects;
 
 	public GameObject rockWallPrefab1;
 	public GameObject rockWallPrefab2;
@@ -19,34 +20,20 @@ public class Creator : MonoBehaviour {
 	public GameObject rockfab1;
 	public GameObject rockfab2;
 	public GameObject rockfab3;
-	private List<GameObject> objects;
 
-	/*public List<GameObject> go = new List<GameObject>() {
-		rockWallPrefab1,
-		rockWallPrefab2,
-		treefab1,
-		treefab2,
-		treefab3,
-		treefab4,
-		treefab4,
-		treefab5,
-		bushfab1,
-		bushfab2,
-		bushfab3,
-		bushfab4,
-		rockfab1,
-		rockfab2,
-		rockfab3
-	};
-
-	public List<GameObject> getGO() {
-		return this.go;
-	}*/
+	public List<string> types = new List<string> () {"tree", "rock", "plant", "air"};
+	public List<GameObject> treelist;
+	public List<GameObject> rocklist;
+	public List<GameObject> plantlist;
 
 	// Use this for initialization
 	void Start () {
 		objects = new List<GameObject> ();
-		//MakeRockWall();
+		this.size = GameObject.Find ("Plane").GetComponent<Collider> ().bounds.size;
+		print(size);
+		treelist = new List<GameObject>() { treefab1, treefab2, treefab3, treefab4, treefab5 };
+		plantlist = new List<GameObject>() { bushfab1, bushfab2, bushfab3, bushfab4 };
+		rocklist = new List<GameObject>() { rockfab1, rockfab2, rockfab3 };
 		MakeForest();
 	}
 
@@ -58,36 +45,35 @@ public class Creator : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+
 	}
 
 	//Makes a rock wall
-	void MakeRockWall() {
-		bool r = true;
-		for (int i=(size); i>((size+25)*-1); i-=25) {
-			GameObject prefab = r ? rockWallPrefab1 : rockWallPrefab2;
-			int h = r ? 5 : 1;
-			GameObject rock = (GameObject)GameObject.Instantiate(prefab, new Vector3(i, 0, ((size)*-1)), Quaternion.identity);
-			rock.transform.localScale = new Vector3(2, h, 2);
-			GameObject rock2 = (GameObject)GameObject.Instantiate(prefab, new Vector3(i, 0, (size)), Quaternion.identity);
-			rock2.transform.localScale = new Vector3(2, h, 2);
-			GameObject rock3 = (GameObject)GameObject.Instantiate(prefab, new Vector3((size), 0, i), Quaternion.identity);
-			rock3.transform.localScale = new Vector3(2, h, 2);
-			GameObject rock4 = (GameObject)GameObject.Instantiate(prefab, new Vector3(((size)*-1), 0, i), Quaternion.identity);
-			rock4.transform.localScale = new Vector3(2, h, 2);
-			r = !r;
-		}
-	}
+//	void MakeBoundary() {
+//		bool r = true;
+//		for (int i=(int)size.x; i > ((size.x+25)*-1); i-=25) {
+//			GameObject prefab = r ? rockWallPrefab1 : rockWallPrefab2;
+//			int h = r ? 5 : 1;
+//			GameObject rock = (GameObject)GameObject.Instantiate(prefab, new Vector3(i, 0, ((size.x)*-1)), Quaternion.identity);
+//			rock.transform.localScale = new Vector3(2, h, 2);
+//			GameObject rock2 = (GameObject)GameObject.Instantiate(prefab, new Vector3(i, 0, (size.x)), Quaternion.identity);
+//			rock2.transform.localScale = new Vector3(2, h, 2);
+//			GameObject rock3 = (GameObject)GameObject.Instantiate(prefab, new Vector3((size.x), 0, i), Quaternion.identity);
+//			rock3.transform.localScale = new Vector3(2, h, 2);
+//			GameObject rock4 = (GameObject)GameObject.Instantiate(prefab, new Vector3(((size.x)*-1), 0, i), Quaternion.identity);
+//			rock4.transform.localScale = new Vector3(2, h, 2);
+//			r = !r;
+//		}
+//	}
 
 	//Makes a forest
 	void MakeForest() {
 
-		List<string> types = new List<string> () {"tree", "rock", "plant", "air"};
-
 		float threshhold = 2;
-		int chunksize = 10;
-		int imax = ((size - 30) * 2 ) / chunksize;
-		int jmax = ((size - 30) * 2 ) / chunksize;
+		int chunksize = 40;
+		int imax = (int)size.x / chunksize;
+		int jmax = (int)size.z / chunksize;
+		print (imax + " " + jmax);
 
 		Chunk[,] chunks = new Chunk[imax, jmax];
 
@@ -95,49 +81,42 @@ public class Creator : MonoBehaviour {
 			Chunk[] subchunks = new Chunk [jmax];
 
 			for (int j = 0; j < jmax; j++) {
-				Chunk chunk;
+				Dictionary<string, Attribute> variation = new Dictionary<string, Attribute>();
 				if (i == 0 ) {
 					if (j == 0) {
-						Dictionary<string, Attribute> variation = new Dictionary<string, Attribute>();
 						foreach (var type in types) {
 							Attribute att = new Attribute (Random.Range(0f, 1f), Random.Range(0.8f, 3f), Random.Range(0f, 1f), threshhold);
 							variation.Add (type, att);
 						}
-						chunk = new Chunk(new Vector2(i * size, j* size), size, variation, this);
 					}
 					else {
-						Dictionary<string, Attribute> variation = new Dictionary<string, Attribute>();
 						Chunk lChunk = subchunks [j - 1];
 						Chunk tChunk = lChunk;
 						foreach (var type in types) {
 							Attribute att = new Attribute().getNext(lChunk.variation[type], tChunk.variation[type]);
 							variation.Add (type, att);
 						}
-						chunk = new Chunk(new Vector2(i * size, j* size), size, variation, this);
 					}
 				}
 				else {
 					if (j == 0) {
-						Dictionary<string, Attribute> variation = new Dictionary<string, Attribute>();
 						Chunk tChunk = chunks[i - 1, j];
 						Chunk lChunk = tChunk;
 						foreach (var type in types) {
 							Attribute att = new Attribute().getNext(lChunk.variation[type], tChunk.variation[type]);
 							variation.Add (type, att);
 						}
-						chunk = new Chunk(new Vector2(i * size, j* size), size, variation, this);
 					} else {	
-						Dictionary<string, Attribute> variation = new Dictionary<string, Attribute> ();
 						Chunk lChunk = subchunks [j - 1];
 						Chunk tChunk = chunks [i - 1, j];
 						foreach (var type in types) {
 							Attribute att = new Attribute ().getNext (lChunk.variation [type], tChunk.variation [type]);
 							variation.Add (type, att);
 						}
-						chunk = new Chunk (new Vector2(i * size, j* size), size, variation, this);
+
 					}
 				}
-				subchunks[j] = chunk;
+				subchunks[j] = new Chunk (new Vector2(i * chunksize, j* chunksize), chunksize, variation, this);
 			}
 			for (int z = 0; z < subchunks.Length; z++) {
 				chunks [i, z] = subchunks[z];
@@ -157,7 +136,7 @@ public class Creator : MonoBehaviour {
 		}
 
 		//delete
-		//fobjects = removeFObject ();
+		//fobjects = rmFObjInArea ();
 
 		foreach (FObject fobject in fobjects) {
 			GameObject gentree = (GameObject)GameObject.Instantiate (fobject.prefab, fobject.position, Quaternion.identity);
@@ -166,7 +145,7 @@ public class Creator : MonoBehaviour {
 		}
 	}
 
-	public List<FObject> removeFObject(List<FObject> fobjects, Vector3 start, Vector3 end) {
+	public List<FObject> rmFObjInArea(List<FObject> fobjects, Vector3 start, Vector3 end) {
 		foreach (FObject fobject in fobjects) {
 			
 		}
@@ -207,8 +186,6 @@ public class Creator : MonoBehaviour {
 
 	public class Chunk {
 
-		//public List<GameObject> go = getGO();
-
 		public int startpos;
 		public int size;
 		public List<FObject> fobjects;
@@ -217,94 +194,48 @@ public class Creator : MonoBehaviour {
 		public Chunk(Vector2 startpos, int size, Dictionary<string, Attribute> variation, Creator c) {
 			this.variation = variation;
 
-			string[] types = new string[]{"tree", "rock", "plant", "air"};
 			fobjects = new List<FObject>();
 
 			for ( int i = (int) startpos.x; i < (int)startpos.x + size;) {
 				int maxi = i;
 				for (int j = (int) startpos.y; j < (int)startpos.y + size;) {
+
 					//random roll for iterm class
 					//todo probability
 					//random roll for item type
 					int itype = Random.Range(0, variation.Count);
-					string type = types [itype];
+					string type = c.types [itype];
 
-					int temp = 0;
+					float temp = 0;
 					GameObject prefab = c.treefab1;
-					int subtype;
 
 					switch (type) {
 					case "air":
 						j += (int)(10 * Random.Range(1f, 2.5f));
 						continue;
 					case "tree":
-						subtype = Random.Range (0, 5);
-						switch (subtype) {
-						case 1:
-							prefab = c.treefab1;
-							break;
-						case 2:
-							prefab = c.treefab2;
-							break;
-						case 3:
-							prefab = c.treefab3;
-							break;
-						case 4:
-							prefab = c.treefab4;
-							break;
-						case 5:
-							prefab = c.treefab5;
-							break;
-						}
-						temp = (int)(3);
+						prefab = c.treelist[Random.Range(0, c.treelist.Count)];
+						temp = 3 * variation[type].scale;
 						break;
 					case "plant":
-						subtype = Random.Range (0, 4);
-						switch (subtype) {
-						case 1:
-							prefab = c.bushfab1;
-							break;
-						case 2:
-							prefab = c.bushfab2;
-							break;
-						case 3:
-							prefab = c.bushfab3;
-							break;
-						case 4:
-							prefab = c.bushfab4;
-							break;
-						}
-						temp = (int)(2);
+						prefab = c.plantlist[Random.Range(0, c.plantlist.Count)];
+						temp = 2 * variation[type].scale;
 						break;
 					case "rock":
-							subtype = Random.Range (0, 3);
-							switch (subtype) {
-							case 1:
-								prefab = c.rockfab1;
-								break;
-							case 2:
-								prefab = c.rockfab2;
-								break;
-							case 3:
-								prefab = c.rockfab3;
-								break;
-							}
-						temp = (int)(20);
+						prefab = c.rocklist[Random.Range(0, c.rocklist.Count)];
+						temp = 20 * variation[type].scale;
 						break;
 					}
 
-					j += temp;
-					//Vector3 v = new Vector3 (i - 150, 0, j-150) + Random.Range(-10f,10f) * new Vector3(1/2.5f,0,1);
-					Vector3 v = new Vector3 (i, 0 , j) + Random.Range(-5f, 5f) * new Vector3(-1, 0, 1);
-					float _size = Random.Range (0.5f, 1.5f);
-					FObject fobject = new FObject(prefab, v, new Vector3 (_size, variation[type].scale, _size));
-					fobjects.Add (fobject);
+					//TODO Scale is still iffy
+					fobjects.Add(new FObject(prefab, new Vector3(i, 0, j), new Vector3(1, variation[type].scale,1)));
 
-					if (temp + i > maxi) {
-						maxi = temp + i;
+					j += (int)temp;
+					if ((int)temp + i > maxi) {
+						maxi = (int)temp + i;
 					}
 				}
-				i = maxi;//+= maxi;
+				i = Random.Range(i, maxi);
 			}
 		}
 
