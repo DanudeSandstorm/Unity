@@ -73,7 +73,12 @@ public class Creator : MonoBehaviour {
 		int chunksize = 40;
 		int imax = (int)size.x / chunksize;
 		int jmax = (int)size.z / chunksize;
-		print (imax + " " + jmax);
+		Dictionary<string, Attribute> seed = new Dictionary<string, Attribute> () { 
+			{"tree", new Attribute (Random.Range(0f, 1f), Random.Range(0.8f, 3f), Random.Range(0f, 1f), threshhold) },
+			{"plant", new Attribute (Random.Range(0f, 1f), Random.Range(0.8f, 3f), Random.Range(0f, 1f), threshhold) },
+			{"rock", new Attribute (Random.Range(0f, 1f), Random.Range(0.8f, 3f), Random.Range(0f, 1f), threshhold) },
+			{"air", new Attribute (Random.Range(0f, 1f), Random.Range(0.8f, 3f), Random.Range(0f, 1f), threshhold) }
+		};
 
 		Chunk[,] chunks = new Chunk[imax, jmax];
 
@@ -82,38 +87,25 @@ public class Creator : MonoBehaviour {
 
 			for (int j = 0; j < jmax; j++) {
 				Dictionary<string, Attribute> variation = new Dictionary<string, Attribute>();
-				if (i == 0 ) {
-					if (j == 0) {
-						foreach (var type in types) {
-							Attribute att = new Attribute (Random.Range(0f, 1f), Random.Range(0.8f, 3f), Random.Range(0f, 1f), threshhold);
-							variation.Add (type, att);
-						}
+				if (i == 0 && j == 0) {
+					variation = seed;
+				} else {
+					Chunk lChunk;
+					Chunk tChunk;
+					if (i == 0) {
+						tChunk = lChunk = subchunks [j - 1];
 					}
-					else {
-						Chunk lChunk = subchunks [j - 1];
-						Chunk tChunk = lChunk;
-						foreach (var type in types) {
-							Attribute att = new Attribute().getNext(lChunk.variation[type], tChunk.variation[type]);
-							variation.Add (type, att);
-						}
+					else if (j == 0) {
+						tChunk = lChunk = chunks[i - 1, j];
+					} 
+					else {	
+						tChunk = chunks [i - 1, j];
+						lChunk = subchunks [j - 1];
 					}
-				}
-				else {
-					if (j == 0) {
-						Chunk tChunk = chunks[i - 1, j];
-						Chunk lChunk = tChunk;
-						foreach (var type in types) {
-							Attribute att = new Attribute().getNext(lChunk.variation[type], tChunk.variation[type]);
-							variation.Add (type, att);
-						}
-					} else {	
-						Chunk lChunk = subchunks [j - 1];
-						Chunk tChunk = chunks [i - 1, j];
-						foreach (var type in types) {
-							Attribute att = new Attribute ().getNext (lChunk.variation [type], tChunk.variation [type]);
-							variation.Add (type, att);
-						}
 
+					foreach (var type in types) {
+						Attribute att = new Attribute().getNext(lChunk.variation[type], tChunk.variation[type]);
+						variation.Add (type, att);
 					}
 				}
 				subchunks[j] = new Chunk (new Vector2(i * chunksize, j* chunksize), chunksize, variation, this);
@@ -153,10 +145,10 @@ public class Creator : MonoBehaviour {
 	}
 
 	public class Attribute {
-		public float t;
 		public float probability;
 		public float scale;
 		public float variation;
+		public float t;
 
 		public Attribute() {}
 
@@ -217,18 +209,18 @@ public class Creator : MonoBehaviour {
 						prefab = c.treelist[Random.Range(0, c.treelist.Count)];
 						temp = 3 * variation[type].scale;
 						break;
-					case "plant":
-						prefab = c.plantlist[Random.Range(0, c.plantlist.Count)];
-						temp = 2 * variation[type].scale;
-						break;
 					case "rock":
 						prefab = c.rocklist[Random.Range(0, c.rocklist.Count)];
 						temp = 20 * variation[type].scale;
 						break;
+					case "plant":
+						prefab = c.plantlist[Random.Range(0, c.plantlist.Count)];
+						temp = 2 * variation[type].scale;
+						break;
 					}
 
 					//TODO Scale is still iffy
-					fobjects.Add(new FObject(prefab, new Vector3(i, 0, j), new Vector3(1, variation[type].scale,1)));
+					fobjects.Add(new FObject(prefab, new Vector3(i, 0, j), new Vector3(1, variation[type].scale, 1)));
 
 					j += (int)temp;
 					if ((int)temp + i > maxi) {
@@ -244,6 +236,7 @@ public class Creator : MonoBehaviour {
 		}
 	}
 
+	//TODO introduce subclasses for object types
 	public class FObject {
 		public GameObject prefab;
 		public Vector3 position;
